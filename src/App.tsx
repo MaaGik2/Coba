@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus } from 'lucide-react';
-import type { Component, Category, NewComponentFormData } from './types';
+import type { Component, Category, NewComponentFormData, TypeComposant, Emplacement, Fournisseur } from './types';
 import { supabase } from './lib/supabase';
 import { Header } from './components/layout/Header';
 import { ComponentCard } from './features/components/ComponentCard';
@@ -8,6 +8,10 @@ import { NewComponentModal } from './components/modals/NewComponentModal';
 import { NewCategoryModal } from './components/modals/NewCategoryModal';
 import { useComponents } from './hooks/useComponents';
 import { CategoryRepository } from './repositories/CategoryRepository';
+import { TypeComposantRepository } from './repositories/TypeComposantRepository';
+import { EmplacementRepository } from './repositories/EmplacementRepository';
+import { FournisseurRepository } from './repositories/FournisseurRepository';
+import { NewTypeComposantModal } from './components/modals/NewTypeComposantModal';
 
 function App() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -34,9 +38,17 @@ function App() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [typesComposant, setTypesComposant] = useState<TypeComposant[]>([]);
+  const [emplacements, setEmplacements] = useState<Emplacement[]>([]);
+  const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
+  const [isTypeComposantModalOpen, setIsTypeComposantModalOpen] = useState(false);
+  const [newTypeComposant, setNewTypeComposant] = useState({ libelle: '' });
 
   const { components, createComponent, updateColor } = useComponents();
   const categoryRepository = new CategoryRepository();
+  const typeComposantRepository = new TypeComposantRepository();
+  const emplacementRepository = new EmplacementRepository();
+  const fournisseurRepository = new FournisseurRepository();
 
   useEffect(() => {
     fetchCategories();
@@ -44,6 +56,9 @@ function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
+    fetchTypesComposant();
+    fetchEmplacements();
+    fetchFournisseurs();
 
     return () => {
       subscription.unsubscribe();
@@ -56,6 +71,15 @@ function App() {
       setCategories(data);
     } catch (error) {
       console.error('Erreur lors du chargement des catégories:', error);
+    }
+  };
+
+  const fetchTypesComposant = async () => {
+    try {
+      const data = await typeComposantRepository.fetchAll();
+      setTypesComposant(data);
+    } catch (error) {
+      console.error('Erreur lors du chargement des types de composants:', error);
     }
   };
 
@@ -165,6 +189,36 @@ function App() {
   const checkUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     setUser(session?.user ?? null);
+  };
+
+  const fetchEmplacements = async () => {
+    try {
+      const data = await emplacementRepository.fetchAll();
+      setEmplacements(data);
+    } catch (error) {
+      console.error('Erreur lors du chargement des emplacements:', error);
+    }
+  };
+
+  const fetchFournisseurs = async () => {
+    try {
+      const data = await fournisseurRepository.fetchAll();
+      setFournisseurs(data);
+    } catch (error) {
+      console.error('Erreur lors du chargement des fournisseurs:', error);
+    }
+  };
+
+  const handleTypeComposantSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await typeComposantRepository.create(newTypeComposant.libelle);
+      setIsTypeComposantModalOpen(false);
+      fetchTypesComposant();
+      setNewTypeComposant({ libelle: '' });
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout du type de composant:', error);
+    }
   };
 
   if (!user) {
@@ -302,6 +356,14 @@ function App() {
           categories={categories}
           renderCategoryOptions={renderCategoryOptions}
           getMainCategories={getMainCategories}
+        />
+
+        <NewTypeComposantModal
+          isOpen={isTypeComposantModalOpen}
+          onClose={() => setIsTypeComposantModalOpen(false)}
+          onSubmit={handleTypeComposantSubmit}
+          newType={newTypeComposant}
+          setNewType={setNewTypeComposant}
         />
       </div>
     </div>

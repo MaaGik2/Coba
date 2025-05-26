@@ -35,3 +35,47 @@ export interface NewComponentFormData {
   value?: number;
   unit?: string;
 }
+
+export interface TypeComposant {
+  id: string;
+  libelle: string;
+}
+
+export interface Emplacement {
+  id: string;
+  description: string;
+}
+
+export interface Fournisseur {
+  id: string;
+  nom: string;
+  site_web?: string;
+  email?: string;
+  telephone?: string;
+}
+
+export interface Composant {
+  id: string;
+  nom: string;
+  description?: string;
+  valeur?: string;
+  boitier?: string;
+  quantite_en_stock: number;
+  seuil_alerte: number;
+  type_id?: string;
+  emplacement_id?: string;
+}
+
+export interface Commande {
+  id: string;
+  date_commande: string;
+  statut: string;
+  fournisseur_id?: string;
+}
+
+export interface LigneCommande {
+  commande_id: string;
+  composant_id: string;
+  quantite_commandee: number;
+  prix_unitaire?: number;
+}
