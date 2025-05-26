@@ -5,6 +5,7 @@ import { supabase } from './lib/supabase';
 import { Header } from './components/layout/Header';
 import { ComponentCard } from './features/components/ComponentCard';
 import { NewComponentModal } from './components/modals/NewComponentModal';
+import { NewCategoryModal } from './components/modals/NewCategoryModal';
 import { useComponents } from './hooks/useComponents';
 import { CategoryRepository } from './repositories/CategoryRepository';
 
@@ -287,6 +288,17 @@ function App() {
           onSubmit={handleSubmit}
           newComponent={newComponent}
           setNewComponent={setNewComponent}
+          categories={categories}
+          renderCategoryOptions={renderCategoryOptions}
+          getMainCategories={getMainCategories}
+        />
+
+        <NewCategoryModal
+          isOpen={isCategoryModalOpen}
+          onClose={() => setIsCategoryModalOpen(false)}
+          onSubmit={handleCategorySubmit}
+          newCategory={newCategory}
+          setNewCategory={setNewCategory}
           categories={categories}
           renderCategoryOptions={renderCategoryOptions}
           getMainCategories={getMainCategories}
