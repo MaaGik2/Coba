@@ -25,6 +25,9 @@ export interface Category {
 export interface NewComponentFormData {
   name: string;
   category_id: string;
+  type_id?: string;
+  emplacement_id?: string;
+  fournisseur_id?: string;
   quantity: number;
   grid_row: number;
   grid_column: number;

@@ -12,6 +12,11 @@ import { TypeComposantRepository } from './repositories/TypeComposantRepository'
 import { EmplacementRepository } from './repositories/EmplacementRepository';
 import { FournisseurRepository } from './repositories/FournisseurRepository';
 import { NewTypeComposantModal } from './components/modals/NewTypeComposantModal';
+import { TypeComposantList } from './features/types/TypeComposantList';
+import { EmplacementList } from './features/emplacements/EmplacementList';
+import { FournisseurList } from './features/fournisseurs/FournisseurList';
+import { NewEmplacementModal } from './components/modals/NewEmplacementModal';
+import { NewFournisseurModal } from './components/modals/NewFournisseurModal';
 
 function App() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -43,6 +48,15 @@ function App() {
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const [isTypeComposantModalOpen, setIsTypeComposantModalOpen] = useState(false);
   const [newTypeComposant, setNewTypeComposant] = useState({ libelle: '' });
+  const [isEmplacementModalOpen, setIsEmplacementModalOpen] = useState(false);
+  const [isFournisseurModalOpen, setIsFournisseurModalOpen] = useState(false);
+  const [newEmplacement, setNewEmplacement] = useState({ description: '' });
+  const [newFournisseur, setNewFournisseur] = useState({
+    nom: '',
+    site_web: '',
+    email: '',
+    telephone: ''
+  });
 
   const { components, createComponent, updateColor } = useComponents();
   const categoryRepository = new CategoryRepository();
@@ -221,6 +235,35 @@ function App() {
     }
   };
 
+  const handleEmplacementSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await emplacementRepository.create(newEmplacement.description);
+      setIsEmplacementModalOpen(false);
+      fetchEmplacements();
+      setNewEmplacement({ description: '' });
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout de l\'emplacement:', error);
+    }
+  };
+
+  const handleFournisseurSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await fournisseurRepository.create(newFournisseur);
+      setIsFournisseurModalOpen(false);
+      fetchFournisseurs();
+      setNewFournisseur({
+        nom: '',
+        site_web: '',
+        email: '',
+        telephone: ''
+      });
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout du fournisseur:', error);
+    }
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -284,10 +327,11 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100">
+    <div className="min-h-screen bg-gray-900 text-white">
       <div className="container mx-auto px-4 py-8">
         <Header onSignOut={handleSignOut} />
 
+        {/* Section Composants */}
         <div className="bg-grey rounded-lg shadow-lg p-6 mb-8">
           <div className="flex gap-4 mb-6">
             <div className="flex-1 relative">
@@ -336,6 +380,7 @@ function App() {
           </div>
         </div>
 
+        {/* Modals */}
         <NewComponentModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
@@ -343,8 +388,14 @@ function App() {
           newComponent={newComponent}
           setNewComponent={setNewComponent}
           categories={categories}
+          typesComposant={typesComposant}
+          emplacements={emplacements}
+          fournisseurs={fournisseurs}
           renderCategoryOptions={renderCategoryOptions}
           getMainCategories={getMainCategories}
+          onAddTypeComposant={() => setIsTypeComposantModalOpen(true)}
+          onAddEmplacement={() => setIsEmplacementModalOpen(true)}
+          onAddFournisseur={() => setIsFournisseurModalOpen(true)}
         />
 
         <NewCategoryModal
@@ -364,6 +415,22 @@ function App() {
           onSubmit={handleTypeComposantSubmit}
           newType={newTypeComposant}
           setNewType={setNewTypeComposant}
+        />
+
+        <NewEmplacementModal
+          isOpen={isEmplacementModalOpen}
+          onClose={() => setIsEmplacementModalOpen(false)}
+          onSubmit={handleEmplacementSubmit}
+          newEmplacement={newEmplacement}
+          setNewEmplacement={setNewEmplacement}
+        />
+
+        <NewFournisseurModal
+          isOpen={isFournisseurModalOpen}
+          onClose={() => setIsFournisseurModalOpen(false)}
+          onSubmit={handleFournisseurSubmit}
+          newFournisseur={newFournisseur}
+          setNewFournisseur={setNewFournisseur}
         />
       </div>
     </div>

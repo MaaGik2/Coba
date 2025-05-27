@@ -1,5 +1,5 @@
-import { X } from 'lucide-react';
-import type { NewComponentFormData, Category } from '../../types';
+import { X, Plus } from 'lucide-react';
+import type { NewComponentFormData, Category, TypeComposant, Emplacement, Fournisseur } from '../../types';
 
 interface NewComponentModalProps {
   isOpen: boolean;
@@ -8,8 +8,14 @@ interface NewComponentModalProps {
   newComponent: NewComponentFormData;
   setNewComponent: (component: NewComponentFormData) => void;
   categories: Category[];
+  typesComposant: TypeComposant[];
+  emplacements: Emplacement[];
+  fournisseurs: Fournisseur[];
   renderCategoryOptions: (categories: Category[], level?: number) => JSX.Element[];
   getMainCategories: () => Category[];
+  onAddTypeComposant: () => void;
+  onAddEmplacement: () => void;
+  onAddFournisseur: () => void;
 }
 
 export function NewComponentModal({
@@ -19,8 +25,14 @@ export function NewComponentModal({
   newComponent,
   setNewComponent,
   categories,
+  typesComposant,
+  emplacements,
+  fournisseurs,
   renderCategoryOptions,
-  getMainCategories
+  getMainCategories,
+  onAddTypeComposant,
+  onAddEmplacement,
+  onAddFournisseur
 }: NewComponentModalProps) {
   if (!isOpen) return null;
 
@@ -54,17 +66,83 @@ export function NewComponentModal({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Catégorie
+                Type de composant
               </label>
-              <select
-                required
-                value={newComponent.category_id}
-                onChange={(e) => setNewComponent({...newComponent, category_id: e.target.value})}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Sélectionner une catégorie</option>
-                {renderCategoryOptions(getMainCategories())}
-              </select>
+              <div className="flex gap-2">
+                <select
+                  value={newComponent.type_id || ''}
+                  onChange={(e) => setNewComponent({...newComponent, type_id: e.target.value})}
+                  className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Sélectionner un type</option>
+                  {typesComposant.map(type => (
+                    <option key={type.id} value={type.id}>
+                      {type.libelle}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={onAddTypeComposant}
+                  className="px-3 py-2 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition-colors"
+                >
+                  <Plus size={20} />
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Emplacement
+              </label>
+              <div className="flex gap-2">
+                <select
+                  value={newComponent.emplacement_id || ''}
+                  onChange={(e) => setNewComponent({...newComponent, emplacement_id: e.target.value})}
+                  className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Sélectionner un emplacement</option>
+                  {emplacements.map(emplacement => (
+                    <option key={emplacement.id} value={emplacement.id}>
+                      {emplacement.description}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={onAddEmplacement}
+                  className="px-3 py-2 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition-colors"
+                >
+                  <Plus size={20} />
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Fournisseur
+              </label>
+              <div className="flex gap-2">
+                <select
+                  value={newComponent.fournisseur_id || ''}
+                  onChange={(e) => setNewComponent({...newComponent, fournisseur_id: e.target.value})}
+                  className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Sélectionner un fournisseur</option>
+                  {fournisseurs.map(fournisseur => (
+                    <option key={fournisseur.id} value={fournisseur.id}>
+                      {fournisseur.nom}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={onAddFournisseur}
+                  className="px-3 py-2 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition-colors"
+                >
+                  <Plus size={20} />
+                </button>
+              </div>
             </div>
 
             <div className="flex gap-4">
