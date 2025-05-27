@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Search, Plus } from 'lucide-react';
 import type { Component, Category, NewComponentFormData, TypeComposant, Emplacement, Fournisseur } from './types';
 import { supabase } from './lib/supabase';
@@ -7,137 +7,94 @@ import { ComponentCard } from './features/components/ComponentCard';
 import { NewComponentModal } from './components/modals/NewComponentModal';
 import { NewCategoryModal } from './components/modals/NewCategoryModal';
 import { useComponents } from './hooks/useComponents';
-import { CategoryRepository } from './repositories/CategoryRepository';
-import { TypeComposantRepository } from './repositories/TypeComposantRepository';
-import { EmplacementRepository } from './repositories/EmplacementRepository';
-import { FournisseurRepository } from './repositories/FournisseurRepository';
+import { useAuth } from './hooks/useAuth';
+import { useCategories } from './hooks/useCategories';
+import { useTypesComposant } from './hooks/useTypesComposant';
+import { useEmplacements } from './hooks/useEmplacements';
+import { useFournisseurs } from './hooks/useFournisseurs';
+// import { CategoryRepository } from './repositories/CategoryRepository';
+// import { TypeComposantRepository } from './repositories/TypeComposantRepository';
+// import { EmplacementRepository } from './repositories/EmplacementRepository';
+// import { FournisseurRepository } from './repositories/FournisseurRepository';
 import { NewTypeComposantModal } from './components/modals/NewTypeComposantModal';
-import { TypeComposantList } from './features/types/TypeComposantList';
-import { EmplacementList } from './features/emplacements/EmplacementList';
-import { FournisseurList } from './features/fournisseurs/FournisseurList';
+// import { TypeComposantList } from './features/types/TypeComposantList';
+// import { EmplacementList } from './features/emplacements/EmplacementList';
+// import { FournisseurList } from './features/fournisseurs/FournisseurList';
 import { NewEmplacementModal } from './components/modals/NewEmplacementModal';
 import { NewFournisseurModal } from './components/modals/NewFournisseurModal';
 
+// État initial pour les nouveaux éléments
+const initialNewComponent: NewComponentFormData = {
+  name: '',
+  category_id: '',
+  quantity: 0,
+  grid_row: 1,
+  grid_column: 1,
+  led_color_r: 0,
+  led_color_g: 0,
+  led_color_b: 0,
+  properties: {},
+  value: undefined,
+  unit: undefined
+};
+
+const initialNewCategory = { name: '', parent_id: '' };
+const initialNewTypeComposant = { libelle: '' };
+const initialNewEmplacement = { description: '' };
+const initialNewFournisseur = {
+  nom: '',
+  site_web: '',
+  email: '',
+  telephone: ''
+};
+
 function App() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [newCategory, setNewCategory] = useState({ name: '', parent_id: '' });
-  const [newComponent, setNewComponent] = useState<NewComponentFormData>({
-    name: '',
-    category_id: '',
-    quantity: 0,
-    grid_row: 1,
-    grid_column: 1,
-    led_color_r: 0,
-    led_color_g: 0,
-    led_color_b: 0,
-    properties: {},
-    value: undefined,
-    unit: undefined
-  });
-  const [user, setUser] = useState<any>(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [typesComposant, setTypesComposant] = useState<TypeComposant[]>([]);
-  const [emplacements, setEmplacements] = useState<Emplacement[]>([]);
-  const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
-  const [isTypeComposantModalOpen, setIsTypeComposantModalOpen] = useState(false);
-  const [newTypeComposant, setNewTypeComposant] = useState({ libelle: '' });
-  const [isEmplacementModalOpen, setIsEmplacementModalOpen] = useState(false);
-  const [isFournisseurModalOpen, setIsFournisseurModalOpen] = useState(false);
-  const [newEmplacement, setNewEmplacement] = useState({ description: '' });
-  const [newFournisseur, setNewFournisseur] = useState({
-    nom: '',
-    site_web: '',
-    email: '',
-    telephone: ''
-  });
-
+  // Hooks personnalisés pour la gestion des données
   const { components, createComponent, updateColor } = useComponents();
-  const categoryRepository = new CategoryRepository();
-  const typeComposantRepository = new TypeComposantRepository();
-  const emplacementRepository = new EmplacementRepository();
-  const fournisseurRepository = new FournisseurRepository();
+  const { user, email, setEmail, password, setPassword, handleSignIn, handleSignUp, handleSignOut } = useAuth();
+  const { categories, newCategory, setNewCategory, handleCategorySubmit } = useCategories();
+  const { typesComposant, newTypeComposant, setNewTypeComposant, handleTypeComposantSubmit } = useTypesComposant();
+  const { emplacements, newEmplacement, setNewEmplacement, handleEmplacementSubmit } = useEmplacements();
+  const { fournisseurs, newFournisseur, setNewFournisseur, handleFournisseurSubmit } = useFournisseurs();
 
-  useEffect(() => {
-    fetchCategories();
-    checkUser();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+  // États locaux
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [selectedCategory, setSelectedCategory] = React.useState<string>('');
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = React.useState(false);
+  const [isTypeComposantModalOpen, setIsTypeComposantModalOpen] = React.useState(false);
+  const [isEmplacementModalOpen, setIsEmplacementModalOpen] = React.useState(false);
+  const [isFournisseurModalOpen, setIsFournisseurModalOpen] = React.useState(false);
+  const [newComponent, setNewComponent] = React.useState<NewComponentFormData>(initialNewComponent);
+
+  // Filtrage des composants
+  const filteredComponents = React.useMemo(() => {
+    return components.filter(component => {
+      const matchesSearch = component.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = !selectedCategory || component.category_id === selectedCategory;
+      return matchesSearch && matchesCategory;
     });
-    fetchTypesComposant();
-    fetchEmplacements();
-    fetchFournisseurs();
+  }, [components, searchTerm, selectedCategory]);
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const data = await categoryRepository.fetchAll();
-      setCategories(data);
-    } catch (error) {
-      console.error('Erreur lors du chargement des catégories:', error);
-    }
-  };
-
-  const fetchTypesComposant = async () => {
-    try {
-      const data = await typeComposantRepository.fetchAll();
-      setTypesComposant(data);
-    } catch (error) {
-      console.error('Erreur lors du chargement des types de composants:', error);
-    }
-  };
-
+  // Gestionnaires d'événements
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await createComponent(newComponent);
       setIsModalOpen(false);
-      setNewComponent({
-        name: '',
-        category_id: '',
-        quantity: 0,
-        grid_row: 1,
-        grid_column: 1,
-        led_color_r: 0,
-        led_color_g: 0,
-        led_color_b: 0,
-        properties: {},
-        value: undefined,
-        unit: undefined
-      });
+      setNewComponent(initialNewComponent);
     } catch (err) {
       console.error('Erreur lors de l\'ajout du composant:', err);
     }
   };
 
-  const handleCategorySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await categoryRepository.create(newCategory.name, newCategory.parent_id || null);
-      setIsCategoryModalOpen(false);
-      fetchCategories();
-      setNewCategory({ name: '', parent_id: '' });
-    } catch (error) {
-      console.error('Erreur lors de l\'ajout de la catégorie:', error);
-    }
-  };
-
+  // Fonctions utilitaires pour les catégories
   const getSubcategories = (parentId: string | null = null) => {
-    return categories.filter(category => category.parent_id === parentId);
+    return categories.filter((category: Category) => category.parent_id === parentId);
   };
 
   const getMainCategories = () => {
-    return categories.filter(category => !category.parent_id);
+    return categories.filter((category: Category) => !category.parent_id);
   };
 
   const renderCategoryOptions = (categories: Category[], level = 0) => {
@@ -151,131 +108,12 @@ function App() {
     ));
   };
 
-  const filteredComponents = components.filter(component => {
-    const matchesSearch = component.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !selectedCategory || component.category_id === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-    } catch (error: any) {
-      setError(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-      alert('Vérifiez votre email pour confirmer votre inscription !');
-    } catch (error: any) {
-      setError(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-  };
-
-  const checkUser = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    setUser(session?.user ?? null);
-  };
-
-  const fetchEmplacements = async () => {
-    try {
-      const data = await emplacementRepository.fetchAll();
-      setEmplacements(data);
-    } catch (error) {
-      console.error('Erreur lors du chargement des emplacements:', error);
-    }
-  };
-
-  const fetchFournisseurs = async () => {
-    try {
-      const data = await fournisseurRepository.fetchAll();
-      setFournisseurs(data);
-    } catch (error) {
-      console.error('Erreur lors du chargement des fournisseurs:', error);
-    }
-  };
-
-  const handleTypeComposantSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await typeComposantRepository.create(newTypeComposant.libelle);
-      setIsTypeComposantModalOpen(false);
-      fetchTypesComposant();
-      setNewTypeComposant({ libelle: '' });
-    } catch (error) {
-      console.error('Erreur lors de l\'ajout du type de composant:', error);
-    }
-  };
-
-  const handleEmplacementSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await emplacementRepository.create(newEmplacement.description);
-      setIsEmplacementModalOpen(false);
-      fetchEmplacements();
-      setNewEmplacement({ description: '' });
-    } catch (error) {
-      console.error('Erreur lors de l\'ajout de l\'emplacement:', error);
-    }
-  };
-
-  const handleFournisseurSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await fournisseurRepository.create(newFournisseur);
-      setIsFournisseurModalOpen(false);
-      fetchFournisseurs();
-      setNewFournisseur({
-        nom: '',
-        site_web: '',
-        email: '',
-        telephone: ''
-      });
-    } catch (error) {
-      console.error('Erreur lors de l\'ajout du fournisseur:', error);
-    }
-  };
-
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
           <h1 className="text-2xl font-bold text-center mb-6">Connexion</h1>
           
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
-            </div>
-          )}
-
           <form onSubmit={handleSignIn} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -306,16 +144,14 @@ function App() {
             <div className="flex gap-4">
               <button
                 type="submit"
-                disabled={isLoading}
-                className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
               >
-                {isLoading ? 'Chargement...' : 'Connexion'}
+                Connexion
               </button>
               <button
                 type="button"
                 onClick={handleSignUp}
-                disabled={isLoading}
-                className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 disabled:opacity-50"
+                className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
               >
                 Inscription
               </button>
